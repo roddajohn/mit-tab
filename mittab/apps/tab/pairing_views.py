@@ -437,15 +437,26 @@ def e_ballot_search(request):
 
 
 def enter_e_ballot(request, ballot_code):
+    form_kwargs = {}
+
     if request.method == "POST":
         round_id = request.POST.get("round_instance")
 
         if round_id:
-            return enter_result(request,
-                                round_id,
-                                EBallotForm,
-                                ballot_code,
-                                redirect_to="/")
+            confirmed = request.POST.get('confirmed', None)
+
+            if confirmed and not confirmed == '':
+                return enter_result(request,
+                                    round_id,
+                                    EBallotForm,
+                                    ballot_code,
+                                    redirect_to="/")
+            else:
+                request.method = 'GET' # Hacky way to make it redisplay the form
+                form_kwargs['initial'] = {}
+                form_kwargs['initial']['confirmed'] = 'confirmed'
+                print (form_kwargs)
+
         else:
             message = """
                       Missing necessary form data. Please go to tab if this
@@ -483,7 +494,7 @@ def enter_e_ballot(request, ballot_code):
                 """
     else:
         return enter_result(request,
-                            rounds.first().id, EBallotForm, ballot_code)
+                            rounds.first().id, EBallotForm, ballot_code, form_kwargs=form_kwargs)
     return redirect_and_flash_error(request, message, path="/accounts/login")
 
 
@@ -491,7 +502,8 @@ def enter_result(request,
                  round_id,
                  form_class=ResultEntryForm,
                  ballot_code=None,
-                 redirect_to="/pairings/status"):
+                 redirect_to="/pairings/status",
+                 form_kwargs={}):
     round_obj = Round.objects.get(id=round_id)
 
     if request.method == "POST":
@@ -506,7 +518,7 @@ def enter_result(request,
                                               "Result entered successfully",
                                               path=redirect_to)
     else:
-        form_kwargs = {"round_instance": round_obj}
+        form_kwargs.update({"round_instance": round_obj})
         if ballot_code:
             form_kwargs["ballot_code"] = ballot_code
         form = form_class(**form_kwargs)

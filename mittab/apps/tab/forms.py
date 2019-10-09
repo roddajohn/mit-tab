@@ -326,6 +326,7 @@ class ResultEntryForm(forms.Form):
 
 
 class EBallotForm(ResultEntryForm):
+    confirmed = forms.CharField(widget=forms.HiddenInput(), required=False)
     ballot_code = forms.CharField(max_length=30, min_length=0)
 
     def __init__(self, *args, **kwargs):
